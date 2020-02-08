@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Grid</string>
+    <string name="ampm_toggle">Use 24h</string>
 </resources>

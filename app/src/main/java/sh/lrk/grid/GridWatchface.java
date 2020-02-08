@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -21,10 +22,8 @@ import android.text.TextPaint;
 import android.view.SurfaceHolder;
 
 import java.lang.ref.WeakReference;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -45,11 +44,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class GridWatchface extends CanvasWatchFaceService {
 
-    /*
-     * Updates rate in milliseconds for interactive mode. We update once a second to advance the
-     * second hand.
-     */
-    private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.MILLISECONDS.toMillis(30);
+    static final String PREFERENCES_NAME = "gridface";
+    public static final long UPDATE_RATE_MS = TimeUnit.MILLISECONDS.toMillis(30);
+    public static final String KEY_ACTIVE_DIRECTION = "active_direction";
+    public static final String KEY_USE_24H = "use_24h";
 
     /**
      * Handler message id for updating the time periodically in interactive mode.
@@ -102,9 +100,10 @@ public class GridWatchface extends CanvasWatchFaceService {
         private Paint backgroundPaint;//TODO add property for this
         private Paint gridPaint; //TODO add property for this
         private TextPaint textPaint; //TODO add property for this
-        private boolean use24h; //TODO add property for this
-        private int gridOffset = 0;
+        private boolean use24h;
         private float textSize = 48f;
+        private GridPainter gridPainter;
+        private SharedPreferences preferences;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -115,6 +114,8 @@ public class GridWatchface extends CanvasWatchFaceService {
                     .build());
 
             calendar = Calendar.getInstance();
+
+            preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
 
             initializeWatchFace();
         }
@@ -129,6 +130,7 @@ public class GridWatchface extends CanvasWatchFaceService {
             textPaint.setColor(Color.argb(200, 255, 255, 255));
             textPaint.setTextSize(textSize);
             textPaint.setTypeface(Typeface.createFromAsset(getResources().getAssets(), "TRON.TTF"));
+            gridPainter = new GridPainter(gridPaint, preferences);
         }
 
         @Override
@@ -229,20 +231,12 @@ public class GridWatchface extends CanvasWatchFaceService {
         public void onDraw(Canvas canvas, Rect bounds) {
             long now = System.currentTimeMillis();
             calendar.setTimeInMillis(now);
-            drawBackground(canvas);
-            drawGrid(canvas);
+            gridPainter.drawGrid(canvas);
             drawTime(canvas);
         }
 
-        private void drawBackground(Canvas canvas) {
-            if (ambientMode && (lowBitAmbient || burnInProtection)) {
-                canvas.drawColor(Color.BLACK);
-            } else {
-                canvas.drawPaint(backgroundPaint);
-            }
-        }
-
         private void drawTime(Canvas canvas) {
+            use24h = preferences.getBoolean(KEY_USE_24H, true);
             String dateFormatString = (use24h) ? "HH:mm" : "hh:mm a";
             @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormatString);
             String timeText = simpleDateFormat.format(calendar.getTime());
@@ -260,37 +254,6 @@ public class GridWatchface extends CanvasWatchFaceService {
                 textWidth += width;
             }
             return textWidth;
-        }
-
-        private void drawGrid(Canvas canvas) {
-            final int height = canvas.getHeight();
-            final int width = canvas.getWidth();
-            final int numLines = 10; // TODO: create preference
-
-
-            float gridSpacing = ((float) height) / numLines;
-
-            handleOffset(gridSpacing);
-
-            final float gridLeft = gridOffset;
-            final float gridTop = gridOffset;
-
-
-            float lineStart;
-            for (int i = 0; i < gridSpacing; i++) {
-                lineStart = gridTop + i * gridSpacing;
-                canvas.drawLine(gridLeft - gridSpacing, lineStart, (float) width + gridSpacing, lineStart, gridPaint);
-                canvas.drawLine(lineStart, (float) height + gridSpacing, lineStart, gridTop - gridSpacing, gridPaint);
-            }
-
-        }
-
-        private void handleOffset(float maxOffset) {
-            if (gridOffset < maxOffset) {
-                gridOffset++;
-            } else if (gridOffset >= maxOffset) {
-                gridOffset = 0;
-            }
         }
 
         @Override
@@ -352,8 +315,8 @@ public class GridWatchface extends CanvasWatchFaceService {
             invalidate();
             if (shouldTimerBeRunning()) {
                 long timeMs = System.currentTimeMillis();
-                long delayMs = INTERACTIVE_UPDATE_RATE_MS
-                        - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
+                long delayMs = UPDATE_RATE_MS
+                        - (timeMs % UPDATE_RATE_MS);
                 updateHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
