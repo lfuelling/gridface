@@ -6,7 +6,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import java.util.HashSet;
+import java.util.Set;
 
+import static sh.lrk.grid.GridConfigActivity.DEF_VALUES;
 import static sh.lrk.grid.GridWatchface.KEY_ACTIVE_DIRECTION;
 
 class GridPainter {
@@ -33,23 +35,27 @@ class GridPainter {
 
         handleOffset(gridSpacing);
 
-        preferences.getStringSet(KEY_ACTIVE_DIRECTION, new HashSet<>());
+        Set<String> directions = preferences.getStringSet(KEY_ACTIVE_DIRECTION, DEF_VALUES);
 
         //FIXME implement grid direction handling!
 
         float lineStart;
         for (int i = 0; i < gridSpacing; i++) {
-            lineStart = gridOffset + i * gridSpacing;
+            lineStart = i * gridSpacing;
 
             float hStartX = gridOffset - gridSpacing;
-            float hStartY = lineStart;
+            float hStartY = ((directions.contains(GridDirection.DOWN.name())) ? gridOffset :
+                    (directions.contains(GridDirection.UP.name())) ? -gridOffset : 0) + lineStart;
             float hStopX = (float) width + gridSpacing;
-            float hStopY = lineStart;
+            float hStopY = ((directions.contains(GridDirection.DOWN.name())) ? gridOffset :
+                    (directions.contains(GridDirection.UP.name())) ? -gridOffset : 0) + lineStart;
             canvas.drawLine(hStartX, hStartY, hStopX, hStopY, gridPaint);
 
-            float vStartX = lineStart;
+            float vStartX = ((directions.contains(GridDirection.RIGHT.name())) ? gridOffset :
+                    (directions.contains(GridDirection.LEFT.name())) ? -gridOffset : 0) + lineStart;
             float vStartY = (float) height + gridSpacing;
-            float vStopX = lineStart;
+            float vStopX = ((directions.contains(GridDirection.RIGHT.name())) ? gridOffset :
+                    (directions.contains(GridDirection.LEFT.name())) ? -gridOffset : 0) + lineStart;
             float vStopY = gridOffset - gridSpacing;
             canvas.drawLine(vStartX, vStartY, vStopX, vStopY, gridPaint);
         }

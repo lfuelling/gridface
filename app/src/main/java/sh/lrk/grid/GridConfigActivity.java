@@ -11,6 +11,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.ImageButton;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,6 +27,9 @@ import static sh.lrk.grid.GridWatchface.UPDATE_RATE_MS;
  */
 public class GridConfigActivity extends Activity {
     private static final String TAG = "ConfigActivity";
+    public static final HashSet<String> DEF_VALUES = new HashSet<>(Arrays.asList(
+            GridDirection.DOWN.name(),
+            GridDirection.RIGHT.name()));
 
     private SharedPreferences preferences;
     private ImageButton gridDirectionRight;
@@ -57,10 +61,11 @@ public class GridConfigActivity extends Activity {
         gridDirectionUp.setOnClickListener(v -> toggleGrid(GridDirection.UP));
         gridDirectionDown = findViewById(R.id.grid_direction_down);
         gridDirectionDown.setOnClickListener(v -> toggleGrid(GridDirection.DOWN));
+        updateGridControlState();
     }
 
     private void toggleGrid(GridDirection direction) {
-        Set<String> directions = preferences.getStringSet(KEY_ACTIVE_DIRECTION, new HashSet<>());
+        Set<String> directions = preferences.getStringSet(KEY_ACTIVE_DIRECTION, DEF_VALUES);
         switch (direction) {
             case UP:
                 if (directions.contains(GridDirection.UP.name())) {
@@ -102,7 +107,7 @@ public class GridConfigActivity extends Activity {
     }
 
     private void updateGridControlState() {
-        Set<String> activeDirections = preferences.getStringSet(KEY_ACTIVE_DIRECTION, new HashSet<>());
+        Set<String> activeDirections = preferences.getStringSet(KEY_ACTIVE_DIRECTION, DEF_VALUES);
 
         if (activeDirections.contains(GridDirection.RIGHT.name())) {
             gridDirectionRight.setImageDrawable(getDrawable(R.drawable.ic_keyboard_arrow_right_blue_24dp));
