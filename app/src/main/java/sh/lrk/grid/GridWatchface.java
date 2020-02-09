@@ -19,6 +19,7 @@ import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.TextPaint;
+import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 
 import java.lang.ref.WeakReference;
@@ -109,12 +110,9 @@ public class GridWatchface extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            setWatchFaceStyle(new WatchFaceStyle.Builder(GridWatchface.this)
-                    .setAcceptsTapEvents(true)
-                    .build());
+            setWatchFaceStyle(new WatchFaceStyle.Builder(GridWatchface.this).build());
 
             calendar = Calendar.getInstance();
-
             preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
 
             initializeWatchFace();
@@ -171,6 +169,8 @@ public class GridWatchface extends CanvasWatchFaceService {
                 backgroundPaint.setColor(Color.BLACK);
                 backgroundPaint.setAntiAlias(false);
                 backgroundPaint.clearShadowLayer();
+                textPaint.setAntiAlias(false);
+                textPaint.setColor(Color.argb(200, 255, 255, 255));
             } else {
                 gridPaint.setColor(Color.BLUE);
                 gridPaint.setAntiAlias(true);
@@ -178,6 +178,8 @@ public class GridWatchface extends CanvasWatchFaceService {
                 backgroundPaint.setColor(Color.BLACK);
                 backgroundPaint.setAntiAlias(true);
                 backgroundPaint.clearShadowLayer();
+                textPaint.setAntiAlias(true);
+                textPaint.setColor(Color.argb(180, 255, 255, 255));
             }
         }
 
@@ -238,6 +240,8 @@ public class GridWatchface extends CanvasWatchFaceService {
         private void drawTime(Canvas canvas) {
             use24h = preferences.getBoolean(KEY_USE_24H, true);
             String dateFormatString = (use24h) ? "HH:mm" : "hh:mm a";
+            textSize = canvas.getHeight() / ((use24h) ? 5f : 7f);
+            textPaint.setTextSize(textSize);
             @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormatString);
             String timeText = simpleDateFormat.format(calendar.getTime());
             float textWidth = getTextWidth(timeText);
